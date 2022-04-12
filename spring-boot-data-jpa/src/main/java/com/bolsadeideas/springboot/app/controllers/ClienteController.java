@@ -1,0 +1,127 @@
+package com.bolsadeideas.springboot.app.controllers;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.apache.tomcat.jni.File;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.support.SessionStatus;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.bolsadeideas.springboot.app.models.dao.IClienteDao;
+import com.bolsadeideas.springboot.app.models.entity.Cliente;
+import com.bolsadeideas.springboot.app.paginator.PageRender;
+import com.bolsadeideas.springboot.app.sercice.IClienteService;
+
+@Controller
+@SessionAttributes("cliente")
+public class ClienteController {
+
+	@Autowired // Con esta anotación va a buscar un componente registrado en el contenedor que
+				// implemente la interfaz cliente dao, busca un BEANS.
+	private IClienteService clienteService; // Siempre ha de ser el tipo más generico, en este caso la interfaz
+
+	@GetMapping(value = "/ver/{id}")
+	public String ver(@PathVariable(value = "id") Long id, Model model, RedirectAttributes flash) {
+		Cliente cliente = clienteService.findOne(id); // Obtenemos el cliente
+		if (cliente == null) {
+			flash.addFlashAttribute("error", "El cliente no existe en la BBDD");
+			return "redirect:/listar";
+		}
+
+		model.addAttribute("cliente", cliente);
+		model.addAttribute("titulo", "Detalle cliente: " + cliente.getNombre());
+
+		return "ver";
+	}
+
+	@GetMapping("/listar") // Pasamos el listado de clientes a la vista
+	public String listar(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
+
+		Pageable pageRequest = PageRequest.of(page, 6); // Mostramos 4 registros por pagina, se pueden colocar los que
+														// quieras
+
+		Page<Cliente> clientesPaginacion = clienteService.findAll(pageRequest); // Invocamos el listar todo, pero
+																				// paginable del service
+
+		PageRender<Cliente> pageRender = new PageRender<>("/listar", clientesPaginacion);
+		model.addAttribute("titulo", "Listado de clientes");
+		model.addAttribute("clientes", clientesPaginacion); // Pasamos el cliente paginado
+		model.addAttribute("page", pageRender);
+		return "listar";
+	}
+
+	// Crear
+	@GetMapping("/form")
+	public String crear(Model model) {
+		Cliente cliente = new Cliente();
+		model.addAttribute("cliente", cliente);
+		model.addAttribute("titulo", "Formulario de cliente");
+		return "form";
+	}
+
+	@PostMapping("/form") // Guardamos en la bd
+	public String guardar(Cliente cliente, SessionStatus status, RedirectAttributes flash,
+			@RequestParam("file") MultipartFile foto) { // Recibe el objeto cliente que viene con los datos poblados y
+														// lo guarda
+		if (!foto.isEmpty()) {
+			
+			Path rootPath =Paths.get("uploads").resolve(foto.getOriginalFilename()); //Ruta absoluta
+			
+			Path rootAbsolutPath = rootPath.toAbsolutePath();
+			
+			try {
+				Files.copy(foto.getInputStream(), rootAbsolutPath);
+				cliente.setFoto(foto.getOriginalFilename()); // Finalmente pasamos la foto al cliente,el cual lo guarda
+																// despues en la bd en este mismo metodo
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		clienteService.save(cliente);
+		status.setComplete(); // Eliminamos el objeto guardado en la sesion al editar o crear
+		flash.addAttribute("success", "Cliente Creado con exito!");
+		return ("redirect:listar");
+	}
+	// Fin Crear
+
+	@RequestMapping(value = "/form/{id}") // Editar, @pathvariable es para pasarle el id mediante la url
+	public String editar(@PathVariable(value = "id") Long id, Model model) {
+		Cliente cliente = null;
+
+		if (id > 0) {
+			cliente = clienteService.findOne(id);
+		} else {
+			return "redirect://listar"; // Redirijimos por seguridad si es igual a 0
+		}
+
+		model.addAttribute("cliente", cliente);
+		model.addAttribute("titulo", "Editar Cliente");
+		return "form";
+	}
+
+	@RequestMapping(value = "/eliminar/{id}") // Eliminar
+	public String eliminar(@PathVariable(value = "id") Long id) {
+
+		if (id > 0) {
+			clienteService.delete(id);			
+		}
+
+		return "redirect:/listar"; // Lo elimina y retorna a la vista
+	}
+}

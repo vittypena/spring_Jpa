@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<title th:text="${titulo}"></title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+	<h1 th:text="${titulo}"/>
+	<!-- Pasamos el objeto en el form, th:object -->
+	<form th:action="@{/form}" th:object="${cliente}">
+		<table>			
+			<tr>
+				<td>Nombre</td>
+				<td><input type="text" th:field="*{nombre}"/></td><!-- Como hemos pasado el objeto al form podemos acceder "*{directamente}" -->
+			</tr>
+			<tr>
+				<td>Apellido</td>
+				<td><input type="text" th:field="*{apellido}"/></td>
+			</tr>
+			<tr>
+				<td>Email</td>
+				<td><input type="email" th:field="*{email}"/></td>
+			</tr>	
+		</table>
+		<input type="hidden" th:field="*{id}"><!-- Pasamos el id como oculto -->
+	</form>
+</body>
+</html>

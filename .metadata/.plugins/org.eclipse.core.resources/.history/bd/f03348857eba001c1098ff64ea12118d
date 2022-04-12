@@ -1,0 +1,73 @@
+package com.bolsadeideas.springboot.app.controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.support.SessionStatus;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.bolsadeideas.springboot.app.models.dao.IClienteDao;
+import com.bolsadeideas.springboot.app.models.entity.Cliente;
+import com.bolsadeideas.springboot.app.sercice.IClienteService;
+
+@Controller
+@SessionAttributes("cliente")
+public class ClienteController {
+
+	@Autowired							//Con esta anotación va a buscar un componente registrado en el contenedor que implemente la interfaz cliente dao, busca un BEANS.	
+	private IClienteService clienteService;		//Siempre ha de ser el tipo más generico, en este caso la interfaz
+	
+	@GetMapping("/listar")
+	public String listar(Model model) {
+		model.addAttribute("titulo", "Listado de clientes");
+		model.addAttribute("clientes", clienteService.findAll());	//Pasamos el listado de clientes a la vista
+		return "listar";
+	}
+	
+	//Crear
+	@GetMapping("/form")
+	public String crear(Model model) {		
+		Cliente cliente = new Cliente();		
+		model.addAttribute("cliente",cliente);
+		model.addAttribute("titulo", "Formulario de cliente");
+		return "form";
+	}
+	@PostMapping("/form")		//Guardamos en la bd
+	public String guardar(Cliente cliente, SessionStatus status, RedirectAttributes flash) {	//Recibe el objeto cliente que viene con los datos poblados y lo guarda
+		clienteService.save(cliente);
+		status.setComplete();		//Eliminamos el objeto guardado en la sesion al editar o crear
+		return("redirect:listar");
+	}
+	//Fin Crear
+	
+	@RequestMapping(value="/form/{id}")					//Editar, @pathvariable es para pasarle el id mediante la url
+	public String editar(@PathVariable(value="id") Long id, Model model) {
+		Cliente cliente = null;
+		
+		if(id>0) {
+			cliente = clienteService.findOne(id);
+		}else {
+			return "redirect://listar";	//Redirijimos por seguridad si es igual a 0			
+		}
+		
+		model.addAttribute("cliente", cliente);
+		model.addAttribute("titulo", "Editar Cliente");
+		return "form";
+	}
+	
+	@RequestMapping(value="/eliminar/{id}")					//Eliminar
+	public String eliminar(@PathVariable(value="id") Long id) {
+		
+		if(id > 0) {	
+			clienteService.delete(id);
+		}
+		
+		return "redirect:/listar";	//Lo elimina y retorna a la vista
+	}
+}
