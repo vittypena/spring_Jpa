@@ -1,13 +1,18 @@
 package com.bolsadeideas.springboot.app.models.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -22,25 +27,32 @@ public class Cliente implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	private String nombre;
 	private String apellido;
 	private String email;
 
 	@Column(name = "create_at")
-	@Temporal(TemporalType.DATE)	//Para dar formato al campo fecha en la tabla
-	@DateTimeFormat(pattern="yyyy-MM-d")
+	@Temporal(TemporalType.DATE) // Para dar formato al campo fecha en la tabla
+	@DateTimeFormat(pattern = "yyyy-MM-d")
 	private Date createAt;
-		
+
 	private String foto;
+
+	@OneToMany(mappedBy="cliente",fetch=FetchType.LAZY, cascade=CascadeType.ALL)
+	private List<Factura> facturas;
+
+	public Cliente() {
+		facturas = new ArrayList<Factura>();
+	}
 
 	private static final long serialVersionUID = 4327690299451102763L;
 
 	@PrePersist
-	public void prePersist() {		//Se ejecuta justo antes de que se guarde en la base de datos
+	public void prePersist() { // Se ejecuta justo antes de que se guarde en la base de datos
 		createAt = new Date();
 	}
-	
+
 	public Long getId() {
 		return id;
 	}
@@ -93,5 +105,15 @@ public class Cliente implements Serializable {
 		this.foto = foto;
 	}
 
-	
+	public List<Factura> getFacturas() {
+		return facturas;
+	}
+
+	public void setFacturas(List<Factura> facturas) {
+		this.facturas = facturas;
+	}
+
+	public void addFactura(Factura factura) {		//Este es opcional
+		facturas.add(factura);
+	}
 }
