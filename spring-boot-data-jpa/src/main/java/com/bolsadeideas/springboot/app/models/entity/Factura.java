@@ -50,12 +50,9 @@ public class Factura implements Serializable {
 		createAt = new Date();
 	}
 	
-	
 	public Factura() {
 		this.items = new ArrayList<ItemFactura>();
 	}
-
-
 
 	public void addItemFactura(ItemFactura item) {
 		this.items.add(item);
@@ -109,7 +106,7 @@ public class Factura implements Serializable {
 		this.items = items;
 	}
 
-	private Double getTotal() {
+	public Double getTotal() {
 		Double total = 0.0;
 		
 		int size = items.size();
@@ -118,4 +115,5 @@ public class Factura implements Serializable {
 		}
 		return total;
 	}
+	
 }
