@@ -1,8 +1,11 @@
 package com.bolsadeideas.springboot.app.controllers;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +25,7 @@ import com.bolsadeideas.springboot.app.models.entity.Producto;
 import com.bolsadeideas.springboot.app.sercice.IClienteService;
 
 @Controller
+@Secured("ROLE_ADMIN")
 @RequestMapping("/factura")
 @SessionAttributes("factura")	//Mantenemos el objeto factura hasta que se guarde en el form
 public class FacturaController {
@@ -29,20 +33,21 @@ public class FacturaController {
 	@Autowired
 	private IClienteService clienteService;
 	
+	@Autowired
+	private MessageSource messageSource;
+
 	@GetMapping("/ver/{id}")
-	public String ver(@PathVariable(value="id") Long id, Model model, RedirectAttributes flash) {
-		
-		//Factura factura = clienteService.findFacturaById(id);
-		
-		Factura factura = clienteService.fetchByIdWithClienteWithItemFacturaWithProducto(id);
-		
-		if(factura==null) {
-			flash.addFlashAttribute("error", "La factura no existe en la base de datos!");
-			return "redirect: /listar";
+	public String ver(@PathVariable(value = "id") Long id, Model model, RedirectAttributes flash, Locale locale) {
+
+		Factura factura = clienteService.fetchByIdWithClienteWithItemFacturaWithProducto(id); // clienteService.findFacturaById(id);
+
+		if (factura == null) {
+			flash.addFlashAttribute("error", messageSource.getMessage("text.factura.flash.db.error", null, locale));
+			return "redirect:/listar";
 		}
-		
+
 		model.addAttribute("factura", factura);
-		model.addAttribute("titulo", "Factura: " + factura.getDescripcion());
+		model.addAttribute("titulo", String.format(messageSource.getMessage("text.factura.ver.titulo", null, locale), factura.getDescripcion()));
 		return "factura/ver";
 	}
 	
